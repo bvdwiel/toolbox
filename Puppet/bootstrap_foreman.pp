@@ -101,15 +101,15 @@ exec { 'npm_install':
 }
 
 # Database migration
-#exec { 'migrate_database':
-#  cwd     => '/opt/foreman',
-#  path    => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
-#  command => 'env RAILS_ENV=production bundle exec rake db:migrate',
-#  timeout => 0,
-#  creates => '/opt/foreman/db/production.sqlite3',
-#  notify  => Exec['seed_database'],
-#  require => Exec['npm_install'],
-#}
+exec { 'migrate_database':
+  cwd     => '/opt/foreman',
+  path    => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command => 'env RAILS_ENV=production bundle exec rake db:migrate',
+  timeout => 0,
+  creates => '/opt/foreman/db/production.sqlite3',
+  notify  => Exec['seed_database'],
+  require => Exec['npm_install'],
+}
 
 # Compile web assets
 exec { 'compile_web_assets':
@@ -122,11 +122,18 @@ exec { 'compile_web_assets':
 }
 
 # Seed the database
-#exec { 'seed_database':
-#  cwd         => '/opt/foreman',
-#  path        => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
-#  command     => 'env RAILS_ENV=production /usr/local/bin/bundle exec rake db:seed',
-#  timeout     => 0,
-#  refreshonly => true,
-#  require     => Exec['migrate_database'],
-#}
+exec { 'seed_database':
+  cwd         => '/opt/foreman',
+  path        => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command     => 'env RAILS_ENV=production /usr/local/bin/bundle exec rake db:seed',
+  timeout     => 0,
+  refreshonly => true,
+  require     => Exec['migrate_database'],
+}
+
+# Notify user of required action to get initial admin login
+notify { 'generate_admin_user':
+  message =>
+    'Run from /opt/foreman/ and check the output of: env RAILS_ENV=production bundle exec rake permissions:reset',
+  require => Exec['seed_database'],
+}
