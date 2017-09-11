@@ -1,7 +1,7 @@
 # Use Puppet Apply to install Foreman on FreeBSD 11.x
 #-----
 $foremanbranch = '1.16-stable'
-$packages [
+$packages = [
   'www/node',
   'www/npm',
   'devel/git',
