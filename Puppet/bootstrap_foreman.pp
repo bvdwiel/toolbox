@@ -79,3 +79,54 @@ file { 'database.yml':
   source  => 'https://raw.githubusercontent.com/bvdwiel/toolbox/master/Puppet/database.yml',
   require => Exec['checkout_foreman_sources'],
 }
+
+# Install required Ruby gems
+exec { 'install_rubygems':
+  cwd     => '/opt/foreman',
+  path    => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command => '/usr/local/bin/bundle install --without test --path vendor',
+  creates => '/opt/foreman/vendor/ruby',
+  timeout => 0,
+  require => File['database.yml', 'settings.yaml'],
+}
+
+# Perform the npm install task
+exec { 'npm_install':
+  cwd     => '/opt/foreman',
+  path    => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command => 'env CC=gcc5 CXX=g++5 /usr/local/bin/npm install',
+  timeout => 0,
+  creates => '/opt/foreman/node_modules',
+  require => Exec['install_rubygems'],
+}
+
+# Database migration
+exec { 'migrate_database':
+  cwd     => '/opt/foreman',
+  path    => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command => 'env RAILS_ENV=production bundle exec rake db:migrate',
+  timeout => 0,
+  creates => '/opt/foreman/db/production.sqlite3',
+  notify  => Exec['seed_database'],
+  require => Exec['npm_install'],
+}
+
+# Compile web assets
+exec { 'compile_web_assets':
+  cwd     => '/opt/foreman',
+  path    => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command => 'env RAILS_ENV=production /usr/local/bin/bundle exec rake assets:precompile locale:pack webpack:compile',
+  timeout => 0,
+  creates => '/opt/foreman/public/assets',
+  require => Exec['npm_install'],
+}
+
+# Seed the database
+exec { 'seed_database':
+  cwd         => '/opt/foreman',
+  path        => '/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin',
+  command     => 'env RAILS_ENV=production /usr/local/bin/bundle exec rake db:seed',
+  timeout     => 0,
+  refreshonly => true,
+  require     => Exec['migrate_database'],
+}
