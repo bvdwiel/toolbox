@@ -21,7 +21,7 @@ $packages = [
 # Use the latest packages from FreeBSD's binary repository
 exec { 'create_pkg_repodir':
   path    => '/',
-  command => 'mkdir -p /usr/local/etc/pkg/repos',
+  command => '/bin/mkdir -p /usr/local/etc/pkg/repos',
   creates => '/usr/local/etc/pkg/repos',
 }
 
