@@ -25,14 +25,6 @@ exec { 'create_pkg_repodir':
   creates => '/usr/local/etc/pkg/repos',
 }
 
-# Ensure the installation location in /opt (we're installing Foreman outside of system management's way)
-zfs { 'opt':
-  ensure     => 'present',
-  name       => 'zroot/opt',
-  mountpoint => '/opt',
-  before     => File['/opt'],
-}
-
 file { '/opt':
   ensure  => 'directory',
   owner   => 'root',
