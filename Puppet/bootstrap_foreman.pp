@@ -30,6 +30,7 @@ zfs { 'opt':
   ensure     => 'present',
   name       => 'zroot/opt',
   mountpoint => '/opt',
+  before     => File['/opt'],
 }
 
 file { '/opt':
@@ -37,7 +38,6 @@ file { '/opt':
   owner   => 'root',
   group   => 'wheel',
   mode    => '755',
-  require => Zfs['opt'],
 }
 
 file { '/usr/local/etc/pkg/repos/FreeBSD.conf':
